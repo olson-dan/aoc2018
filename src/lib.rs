@@ -8,11 +8,6 @@ pub fn input_generator_day1(input: &str) -> Vec<i64> {
     input.lines().map(|x| x.trim().parse().unwrap()).collect()
 }
 
-#[aoc_generator(day2)]
-pub fn input_generator_day2(input: &str) -> Vec<String> {
-    input.lines().map(|x| x.trim().to_string()).collect()
-}
-
 #[aoc(day1, part1)]
 pub fn solve_day1_part1(input: &[i64]) -> i64 {
     input.iter().sum()
@@ -30,6 +25,11 @@ pub fn solve_day1_part2(input: &[i64]) -> i64 {
         }
     }
     unreachable!();
+}
+
+#[aoc_generator(day2)]
+pub fn input_generator_day2(input: &str) -> Vec<String> {
+    input.lines().map(|x| x.trim().to_string()).collect()
 }
 
 #[aoc(day2, part1)]
@@ -73,4 +73,71 @@ pub fn solve_day2_part2(input: &[String]) -> String {
     unreachable!()
 }
 
+pub struct Rect {
+    claim: u32,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+}
+#[aoc_generator(day3)]
+pub fn input_generator_day3(input: &str) -> Vec<Rect> {
+    let mut rects = Vec::new();
+    for line in input.lines() {
+        let mut it = line.split_whitespace();
+        let claim = it.next().unwrap();
+        let _ = it.next(); // @
+        let xy = it.next().unwrap().trim_matches(':');
+        let (x, y) = xy.split_at(xy.find(',').unwrap());
+        let wh = it.next().unwrap();
+        let (w, h) = wh.split_at(wh.find('x').unwrap());
+        rects.push(Rect {
+            claim: claim[1..].parse().unwrap(),
+            x: x.parse().expect("x"),
+            y: y[1..].parse().expect("y"),
+            w: w.parse().expect("w"),
+            h: h[1..].parse().expect("h"),
+        })
+    }
+    rects
+}
+
+#[aoc(day3, part1)]
+pub fn solve_day3_part1(input: &[Rect]) -> usize {
+    let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+    for rect in input {
+        for x in rect.x..rect.x + rect.w {
+            for y in rect.y..rect.y + rect.h {
+                let value = map.entry((x, y)).or_insert(0);
+                *value = *value + 1;
+            }
+        }
+    }
+    map.iter().filter(|(_, y)| **y > 1).count()
+}
+
+#[aoc(day3, part2)]
+pub fn solve_day3_part2(input: &[Rect]) -> u32 {
+    let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+    for rect in input {
+        for x in rect.x..rect.x + rect.w {
+            for y in rect.y..rect.y + rect.h {
+                let value = map.entry((x, y)).or_insert(0);
+                *value = *value + 1;
+            }
+        }
+    }
+    'a: for rect in input {
+        for x in rect.x..rect.x + rect.w {
+            for y in rect.y..rect.y + rect.h {
+                let value = map.entry((x, y)).or_insert(0);
+                if *value != 1 {
+                    continue 'a;
+                }
+            }
+        }
+        return rect.claim;
+    }
+    unreachable!();
+}
 aoc_lib!{ year = 2018 }
