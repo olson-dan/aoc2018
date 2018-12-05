@@ -1,7 +1,11 @@
 extern crate aoc_runner;
 #[macro_use]
 extern crate aoc_runner_derive;
+extern crate regex;
+
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
+use std::ops::Range;
 
 #[aoc_generator(day1)]
 pub fn input_generator_day1(input: &str) -> Vec<i64> {
@@ -75,10 +79,10 @@ pub fn solve_day2_part2(input: &[String]) -> String {
 
 pub struct Rect {
     claim: u32,
-    x: i32,
-    y: i32,
-    w: i32,
-    h: i32,
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
 }
 #[aoc_generator(day3)]
 pub fn input_generator_day3(input: &str) -> Vec<Rect> {
@@ -104,7 +108,7 @@ pub fn input_generator_day3(input: &str) -> Vec<Rect> {
 
 #[aoc(day3, part1)]
 pub fn solve_day3_part1(input: &[Rect]) -> usize {
-    let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+    let mut map: HashMap<(u32, u32), u32> = HashMap::new();
     for rect in input {
         for x in rect.x..rect.x + rect.w {
             for y in rect.y..rect.y + rect.h {
@@ -118,7 +122,7 @@ pub fn solve_day3_part1(input: &[Rect]) -> usize {
 
 #[aoc(day3, part2)]
 pub fn solve_day3_part2(input: &[Rect]) -> u32 {
-    let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+    let mut map: HashMap<(u32, u32), u32> = HashMap::new();
     for rect in input {
         for x in rect.x..rect.x + rect.w {
             for y in rect.y..rect.y + rect.h {
@@ -140,4 +144,124 @@ pub fn solve_day3_part2(input: &[Rect]) -> u32 {
     }
     unreachable!();
 }
+
+#[derive(Clone, Debug, Default)]
+pub struct Guard {
+    id: u32,
+    sleeps: Vec<Range<u32>>,
+    date: String,
+}
+
+#[aoc_generator(day4)]
+pub fn input_generator_day4(input: &str) -> Vec<Guard> {
+    let re = Regex::new(
+        r"^\[(.*) (\d{2}):(\d{2})\] (Guard #(\d+) begins shift|(wakes up)|(falls asleep))$",
+    ).unwrap();
+
+    let mut guards = Vec::new();
+
+    #[derive(Clone)]
+    enum State {
+        Change(Option<u32>),
+        Awake(u32),
+        Asleep(u32),
+    }
+    let mut current_guard = Guard::default();
+    let mut state = State::Change(None);
+    let mut input: Vec<&str> = input.lines().collect();
+    input.sort_unstable();
+    for l in &input {
+        let cap = re.captures(l).unwrap();
+        let date = cap.get(1).unwrap().as_str();
+        let time: u32 = cap
+            .get(3)
+            .unwrap()
+            .as_str()
+            .parse()
+            .expect("couldn't parse time");
+        let guard: Option<u32> = cap
+            .get(5)
+            .map(|x| x.as_str().parse().expect("couldn't parse guard"));
+        let wakes = cap.get(6).is_some();
+        let sleeps = cap.get(7).is_some();
+        let new_state = match (wakes, sleeps) {
+            (false, false) => State::Change(guard),
+            (true, false) => State::Awake(time),
+            (false, true) => State::Asleep(time),
+            _ => unreachable!(),
+        };
+        let next_state = match (&state, &new_state) {
+            (State::Asleep(_), State::Change(Some(_))) => unreachable!(),
+            (State::Asleep(start), State::Awake(end)) => {
+                current_guard.sleeps.push(Range {
+                    start: *start,
+                    end: *end,
+                });
+                State::Awake(*end)
+            }
+            (State::Awake(_), State::Change(Some(id))) => {
+                if !current_guard.date.is_empty() {
+                    guards.push(current_guard.clone());
+                }
+                current_guard.date = date.to_string();
+                current_guard.id = *id;
+                current_guard.sleeps = Vec::new();
+                State::Change(None)
+            }
+            _ => new_state.clone(),
+        };
+        state = next_state;
+    }
+    guards
+}
+
+#[aoc(day4, part1)]
+pub fn solve_day4_part1(input: &[Guard]) -> u32 {
+    let mut total_sleep: HashMap<u32, u32> = HashMap::new();
+    for guard in input {
+        let amount: u32 = guard.sleeps.iter().map(|x| x.len() as u32).sum();
+        let sleep = total_sleep.entry(guard.id).or_insert(0);
+        *sleep = *sleep + amount;
+    }
+    let (max_id, _) = total_sleep.iter().max_by_key(|(_, ref x)| *x).unwrap();
+
+    let mut total_minutes: HashMap<u32, u32> = HashMap::new();
+    for guard in input {
+        if guard.id == *max_id {
+            for sleep in &guard.sleeps {
+                for minute in sleep.start..sleep.end {
+                    *total_minutes.entry(minute).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let (max_minute, _) = total_minutes.iter().max_by_key(|(_, ref x)| *x).unwrap();
+    max_id * max_minute
+}
+
+#[aoc(day4, part2)]
+pub fn solve_day4_part2(input: &[Guard]) -> u32 {
+    let mut minutes = vec![HashMap::<u32, u32>::new(); 59];
+    for guard in input {
+        for sleep in &guard.sleeps {
+            for minute in sleep.start..sleep.end {
+                *minutes[minute as usize].entry(guard.id).or_insert(0) += 1;
+            }
+        }
+    }
+    let max_minutes: Vec<(u32, u32)> = minutes
+        .iter()
+        .map(|x| {
+            let (guard_id, times) = x.iter().max_by_key(|(_, ref y)| *y).unwrap();
+            (*guard_id, *times)
+        }).collect();
+    let (guard_id, times) = max_minutes.iter().max_by_key(|(_, y)| y).unwrap();
+    let (minute, _) = max_minutes
+        .iter()
+        .enumerate()
+        .find(|(_, x)| *x == &(*guard_id, *times))
+        .unwrap();
+    guard_id * minute as u32
+}
+
 aoc_lib!{ year = 2018 }
