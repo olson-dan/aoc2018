@@ -299,7 +299,6 @@ pub fn solve_day5_part2(input: &str) -> usize {
 
 #[aoc_generator(day6)]
 pub fn input_generator_day6(input: &str) -> Vec<(i32, i32)> {
-    //"1, 1\n1, 6\n8, 3\n3, 4\n5, 5\n8, 9\n"
     input
         .lines()
         .map(|x| {
@@ -344,6 +343,25 @@ pub fn solve_day6_part1(input: &[(i32, i32)]) -> usize {
         counts[i] = 0;
     }
     *counts.iter().max().unwrap()
+}
+
+#[aoc(day6, part2)]
+pub fn solve_day6_part2(input: &[(i32, i32)]) -> usize {
+    let max_x = input.iter().max_by_key(|(x, _)| x).unwrap().0;
+    let max_y = input.iter().max_by_key(|(_, y)| y).unwrap().1;
+    let mut size = 0;
+    for x in -10001..(max_x + 10001) {
+        for y in -10001..(max_y + 10001) {
+            let total_distance: i32 = input
+                .iter()
+                .map(|(a, b)| (x - a).abs() + (y - b).abs())
+                .sum();
+            if total_distance < 10000 {
+                size += 1;
+            }
+        }
+    }
+    size
 }
 
 aoc_lib!{ year = 2018 }
