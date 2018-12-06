@@ -264,4 +264,36 @@ pub fn solve_day4_part2(input: &[Guard]) -> u32 {
     guard_id * minute as u32
 }
 
+#[aoc_generator(day5)]
+pub fn input_generator_day5(input: &str) -> String {
+    input.trim().to_string()
+}
+
+#[aoc(day5, part1)]
+pub fn solve_day5_part1(input: &str) -> usize {
+    let mut v = String::new();
+    for x in input.chars() {
+        if let Some(popped) = v.pop() {
+            if x == popped || !x.eq_ignore_ascii_case(&popped) {
+                v.push(popped);
+                v.push(x);
+            }
+        } else {
+            v.push(x);
+        }
+    }
+    return v.len();
+}
+
+#[aoc(day5, part2)]
+pub fn solve_day5_part2(input: &str) -> usize {
+    "abcdefghijklmnopqrstuvwxyz"
+        .chars()
+        .map(|c| {
+            let mut s = input.to_string();
+            s.retain(|x| !x.eq_ignore_ascii_case(&c));
+            solve_day5_part1(&s)
+        }).min()
+        .unwrap()
+}
 aoc_lib!{ year = 2018 }
