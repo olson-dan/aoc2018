@@ -296,4 +296,54 @@ pub fn solve_day5_part2(input: &str) -> usize {
         }).min()
         .unwrap()
 }
+
+#[aoc_generator(day6)]
+pub fn input_generator_day6(input: &str) -> Vec<(i32, i32)> {
+    //"1, 1\n1, 6\n8, 3\n3, 4\n5, 5\n8, 9\n"
+    input
+        .lines()
+        .map(|x| {
+            let (a, b) = x.trim().split_at(x.find(',').unwrap());
+            (a.parse().unwrap(), b[2..].parse().unwrap())
+        }).collect()
+}
+
+#[aoc(day6, part1)]
+pub fn solve_day6_part1(input: &[(i32, i32)]) -> usize {
+    let max_x = input.iter().max_by_key(|(x, _)| x).unwrap().0;
+    let max_y = input.iter().max_by_key(|(_, y)| y).unwrap().1;
+    let mut map: HashMap<(i32, i32), i32> = HashMap::new();
+    let mut inf: HashSet<usize> = HashSet::new();
+    for x in 0..=max_x {
+        for y in 0..=max_y {
+            let entry = map.entry((x, y)).or_insert(-1);
+            let distances: Vec<i32> = input
+                .iter()
+                .map(|(a, b)| (x - a).abs() + (y - b).abs())
+                .collect();
+            let (index, min_distance) = distances
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, ref d)| *d)
+                .unwrap();
+            let matching = distances.iter().filter(|d| *d == min_distance).count();
+            if matching == 1 {
+                *entry = index as i32;
+            }
+            // Blacklist anything on the edges, its area will be infinite.
+            if x == 0 || y == 0 || x == max_x || y == max_y {
+                inf.insert(index);
+            }
+        }
+    }
+    let mut counts: Vec<usize> = (0..input.len())
+        .into_iter()
+        .map(|i| map.iter().filter(|(_, x)| **x == i as i32).count())
+        .collect();
+    for i in inf {
+        counts[i] = 0;
+    }
+    *counts.iter().max().unwrap()
+}
+
 aoc_lib!{ year = 2018 }
