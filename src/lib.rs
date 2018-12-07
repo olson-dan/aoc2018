@@ -407,4 +407,57 @@ pub fn solve_day7_part1(input: &[(HashSet<char>, HashMap<char, String>)]) -> Str
     finished
 }
 
+#[aoc(day7, part2)]
+pub fn solve_day7_part2(input: &[(HashSet<char>, HashMap<char, String>)]) -> usize {
+    let (set, map) = &input[0];
+    let steps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let mut finished = String::new();
+    let mut elves: Vec<(char, usize)> = Vec::new();
+    let mut second = 0;
+    'a: while finished.len() != set.len() {
+        println!("{}, {}, {:?}", second, finished, elves);
+        let indices_to_remove: Vec<usize> = elves
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (task, finish))| {
+                if second >= *finish {
+                    finished.push(*task);
+                    Some(i)
+                } else {
+                    None
+                }
+            }).collect();
+        for x in indices_to_remove.into_iter().rev() {
+            elves.swap_remove(x);
+        }
+        if elves.len() == 5 {
+            // No elves available.
+            second += 1;
+            continue;
+        }
+        for step in steps.chars() {
+            if !set.contains(&step) {
+                continue;
+            }
+            if finished.chars().any(|x| x == step) || elves.iter().any(|(x, _)| *x == step) {
+                continue;
+            }
+            if let Some(parents) = map.get(&step) {
+                if parents.chars().all(|x| finished.chars().any(|y| x == y)) {
+                    elves.push((step, second + 61 + (step as usize - 'A' as usize)));
+                    continue 'a;
+                }
+            } else {
+                elves.push((step, second + 61 + (step as usize - 'A' as usize)));
+                continue 'a;
+            }
+        }
+        // Nothing can start this second.
+        if finished.len() != set.len() {
+            second += 1;
+        }
+    }
+    second
+}
+
 aoc_lib!{ year = 2018 }
