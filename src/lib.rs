@@ -364,4 +364,47 @@ pub fn solve_day6_part2(input: &[(i32, i32)]) -> usize {
     size
 }
 
+#[aoc_generator(day7)]
+pub fn input_generator_day7(input: &str) -> Vec<(HashSet<char>, HashMap<char, String>)> {
+    let mut map = HashMap::new();
+    let mut set = HashSet::new();
+    for x in input.lines() {
+        let chars: Vec<char> = x.chars().collect();
+        let parent = chars[5];
+        let child = chars[36];
+        set.insert(parent);
+        set.insert(child);
+        let entry = map.entry(child).or_insert(String::new());
+        entry.push(parent);
+    }
+    vec![(set, map)]
+}
+
+#[aoc(day7, part1)]
+pub fn solve_day7_part1(input: &[(HashSet<char>, HashMap<char, String>)]) -> String {
+    let (set, map) = &input[0];
+    let steps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let mut finished = String::new();
+    'a: while finished.len() != set.len() {
+        for step in steps.chars() {
+            if !set.contains(&step) {
+                continue;
+            }
+            if finished.chars().any(|x| x == step) {
+                continue;
+            }
+            if let Some(parents) = map.get(&step) {
+                if parents.chars().all(|x| finished.chars().any(|y| x == y)) {
+                    finished.push(step);
+                    continue 'a;
+                }
+            } else {
+                finished.push(step);
+                continue 'a;
+            }
+        }
+    }
+    finished
+}
+
 aoc_lib!{ year = 2018 }
