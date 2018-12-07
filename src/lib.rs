@@ -415,7 +415,6 @@ pub fn solve_day7_part2(input: &[(HashSet<char>, HashMap<char, String>)]) -> usi
     let mut elves: Vec<(char, usize)> = Vec::new();
     let mut second = 0;
     'a: while finished.len() != set.len() {
-        println!("{}, {}, {:?}", second, finished, elves);
         let indices_to_remove: Vec<usize> = elves
             .iter()
             .enumerate()
