@@ -156,7 +156,8 @@ pub struct Guard {
 pub fn input_generator_day4(input: &str) -> Vec<Guard> {
     let re = Regex::new(
         r"^\[(.*) (\d{2}):(\d{2})\] (Guard #(\d+) begins shift|(wakes up)|(falls asleep))$",
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut guards = Vec::new();
 
@@ -254,7 +255,8 @@ pub fn solve_day4_part2(input: &[Guard]) -> u32 {
         .map(|x| {
             let (guard_id, times) = x.iter().max_by_key(|(_, ref y)| *y).unwrap();
             (*guard_id, *times)
-        }).collect();
+        })
+        .collect();
     let (guard_id, times) = max_minutes.iter().max_by_key(|(_, y)| y).unwrap();
     let (minute, _) = max_minutes
         .iter()
@@ -293,7 +295,8 @@ pub fn solve_day5_part2(input: &str) -> usize {
             let mut s = input.to_string();
             s.retain(|x| !x.eq_ignore_ascii_case(&c));
             solve_day5_part1(&s)
-        }).min()
+        })
+        .min()
         .unwrap()
 }
 
@@ -304,7 +307,8 @@ pub fn input_generator_day6(input: &str) -> Vec<(i32, i32)> {
         .map(|x| {
             let (a, b) = x.trim().split_at(x.find(',').unwrap());
             (a.parse().unwrap(), b[2..].parse().unwrap())
-        }).collect()
+        })
+        .collect()
 }
 
 #[aoc(day6, part1)]
@@ -425,7 +429,8 @@ pub fn solve_day7_part2(input: &[(HashSet<char>, HashMap<char, String>)]) -> usi
                 } else {
                     None
                 }
-            }).collect();
+            })
+            .collect();
         for x in indices_to_remove.into_iter().rev() {
             elves.swap_remove(x);
         }
@@ -459,4 +464,34 @@ pub fn solve_day7_part2(input: &[(HashSet<char>, HashMap<char, String>)]) -> usi
     second
 }
 
-aoc_lib!{ year = 2018 }
+#[aoc_generator(day8)]
+pub fn input_generator_day8(input: &str) -> Vec<usize> {
+    input
+        .trim()
+        .split_whitespace()
+        .map(|x| x.parse().unwrap())
+        .collect()
+    //vec![2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2]
+}
+
+fn get_metadata_sum(mut input: &[usize]) -> (&[usize], usize) {
+    let nodes = input[0];
+    let metadata = input[1];
+    input = &input[2..];
+    let mut sum = 0;
+    for _ in 0..nodes {
+        let (x, y) = get_metadata_sum(input);
+        input = x;
+        sum += y;
+    }
+    sum += &input[..metadata].iter().sum();
+    (&input[metadata..], sum)
+}
+
+#[aoc(day8, part1)]
+pub fn solve_day8_part1(input: &[usize]) -> usize {
+    let (_, sum) = get_metadata_sum(input);
+    sum
+}
+
+aoc_lib! { year = 2018 }
