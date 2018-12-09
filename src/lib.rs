@@ -532,48 +532,60 @@ pub fn input_generator_day9(input: &str) -> Vec<MarbleGame> {
     }]
 }
 
-#[aoc(day9, part1)]
-pub fn solve_day9_part1(input: &[MarbleGame]) -> usize {
-    let input = &input[0];
-    let mut marbles = vec![0];
-    let mut scores = vec![0usize; input.players];
+pub struct MarbleNode {
+    left: usize,
+    right: usize,
+    value: usize,
+}
+
+fn solve_day9(players: usize, last_marble: usize) -> usize {
+    let mut pool: Vec<MarbleNode> = Vec::with_capacity(last_marble);
+    let mut scores = vec![0usize; players];
+
+    pool.push(MarbleNode {
+        left: 0,
+        right: 0,
+        value: 0,
+    });
     let mut current_marble = 0usize;
-    for marble in 1..(input.last_marble + 1) {
+    for marble in 1..=last_marble {
         if marble % 23 == 0 {
-            let current_player = (marble - 1) % input.players;
-            let index = (current_marble + marbles.len() - 7) % marbles.len();
-            let old_marble = marbles.remove(index);
-            scores[current_player] += marble + old_marble;
-            current_marble = index;
+            let current_player = (marble - 1) % players;
+            for _ in 0..7 {
+                current_marble = pool[current_marble].left;
+            }
+            let old_left = pool[current_marble].left;
+            let old_right = pool[current_marble].right;
+            let value = pool[current_marble].value;
+            pool[old_left].right = old_right;
+            pool[old_right].left = old_left;
+            current_marble = old_right;
+            scores[current_player] += marble + value;
         } else {
-            let new_index = (current_marble + 1) % marbles.len() + 1;
-            marbles.insert(new_index, marble);
-            current_marble = new_index;
+            let right = pool[current_marble].right;
+            let old_right = pool[right].right;
+            pool[old_right].left = pool.len();
+            pool[right].right = pool.len();
+            pool.push(MarbleNode {
+                left: right,
+                right: old_right,
+                value: marble,
+            });
+            current_marble = pool.len() - 1;
         }
     }
     *scores.iter().max().unwrap()
+}
+#[aoc(day9, part1)]
+pub fn solve_day9_part1(input: &[MarbleGame]) -> usize {
+    let input = &input[0];
+    solve_day9(input.players, input.last_marble)
 }
 
 #[aoc(day9, part2)]
 pub fn solve_day9_part2(input: &[MarbleGame]) -> usize {
     let input = &input[0];
-    let mut marbles = vec![0];
-    let mut scores = vec![0usize; input.players];
-    let mut current_marble = 0usize;
-    for marble in 1..(input.last_marble * 100 + 1) {
-        if marble % 23 == 0 {
-            let current_player = (marble - 1) % input.players;
-            let index = (current_marble + marbles.len() - 7) % marbles.len();
-            let old_marble = marbles.remove(index);
-            scores[current_player] += marble + old_marble;
-            current_marble = index;
-        } else {
-            let new_index = (current_marble + 1) % marbles.len() + 1;
-            marbles.insert(new_index, marble);
-            current_marble = new_index;
-        }
-    }
-    *scores.iter().max().unwrap()
+    solve_day9(input.players, input.last_marble * 100)
 }
 
 aoc_lib! { year = 2018 }
