@@ -518,4 +518,62 @@ pub fn solve_day8_part2(input: &[usize]) -> usize {
     root_node
 }
 
+pub struct MarbleGame {
+    players: usize,
+    last_marble: usize,
+}
+#[aoc_generator(day9)]
+pub fn input_generator_day9(input: &str) -> Vec<MarbleGame> {
+    let re = Regex::new(r"^(\d+) players; last marble is worth (\d+) points$").unwrap();
+    let cap = re.captures(input).unwrap();
+    vec![MarbleGame {
+        players: cap.get(1).unwrap().as_str().parse().unwrap(),
+        last_marble: cap.get(2).unwrap().as_str().parse().unwrap(),
+    }]
+}
+
+#[aoc(day9, part1)]
+pub fn solve_day9_part1(input: &[MarbleGame]) -> usize {
+    let input = &input[0];
+    let mut marbles = vec![0];
+    let mut scores = vec![0usize; input.players];
+    let mut current_marble = 0usize;
+    for marble in 1..(input.last_marble + 1) {
+        if marble % 23 == 0 {
+            let current_player = (marble - 1) % input.players;
+            let index = (current_marble + marbles.len() - 7) % marbles.len();
+            let old_marble = marbles.remove(index);
+            scores[current_player] += marble + old_marble;
+            current_marble = index;
+        } else {
+            let new_index = (current_marble + 1) % marbles.len() + 1;
+            marbles.insert(new_index, marble);
+            current_marble = new_index;
+        }
+    }
+    *scores.iter().max().unwrap()
+}
+
+#[aoc(day9, part2)]
+pub fn solve_day9_part2(input: &[MarbleGame]) -> usize {
+    let input = &input[0];
+    let mut marbles = vec![0];
+    let mut scores = vec![0usize; input.players];
+    let mut current_marble = 0usize;
+    for marble in 1..(input.last_marble * 100 + 1) {
+        if marble % 23 == 0 {
+            let current_player = (marble - 1) % input.players;
+            let index = (current_marble + marbles.len() - 7) % marbles.len();
+            let old_marble = marbles.remove(index);
+            scores[current_player] += marble + old_marble;
+            current_marble = index;
+        } else {
+            let new_index = (current_marble + 1) % marbles.len() + 1;
+            marbles.insert(new_index, marble);
+            current_marble = new_index;
+        }
+    }
+    *scores.iter().max().unwrap()
+}
+
 aoc_lib! { year = 2018 }
