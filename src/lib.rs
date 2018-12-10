@@ -588,4 +588,81 @@ pub fn solve_day9_part2(input: &[MarbleGame]) -> usize {
     solve_day9(input.players, input.last_marble * 100)
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct Day10Light {
+    position: (i64, i64),
+    velocity: (i64, i64),
+}
+
+#[aoc_generator(day10)]
+pub fn input_generator_day10(input: &str) -> Vec<Day10Light> {
+    let re =
+        Regex::new(r"position=<\s*(-*\d+),\s*(-*\d+)>\s*velocity=<\s*(-*\d+),\s*(-*\d+)>").unwrap();
+    re.captures_iter(input)
+        .map(|cap| {
+            let position = (cap[1].parse().unwrap(), cap[2].parse().unwrap());
+            let velocity = (cap[3].parse().unwrap(), cap[4].parse().unwrap());
+            Day10Light { position, velocity }
+        }).collect()
+}
+
+use std::fs::File;
+use std::io::{BufWriter, Write};
+
+#[aoc(day10, part1)]
+pub fn solve_day10_part1(input: &[Day10Light]) -> usize {
+    let mut lights: Vec<Day10Light> = input.iter().cloned().collect();
+    let mut min_area = 0xfffffffffffffff;
+    for i in 0..11000 {
+        let min_x = lights
+            .iter()
+            .min_by_key(|x| x.position.0)
+            .unwrap()
+            .position
+            .0;
+        let max_x = lights
+            .iter()
+            .max_by_key(|x| x.position.0)
+            .unwrap()
+            .position
+            .0;
+        let min_y = lights
+            .iter()
+            .min_by_key(|x| x.position.1)
+            .unwrap()
+            .position
+            .1;
+        let max_y = lights
+            .iter()
+            .max_by_key(|x| x.position.1)
+            .unwrap()
+            .position
+            .1;
+        let w = max_x - min_x;
+        let h = max_y - min_y;
+        if w * h < min_area {
+            min_area = w * h;
+        }
+        if w < 100 && h < 10 {
+            println!("i: {}, w,h: {}, {}, a: {}", i, w, h, w * h);
+            let mut out = BufWriter::new(File::create(&format!("out{}.ppm", i)).unwrap());
+            writeln!(out, "P3\n{} {}\n255", w + 6, h + 6).unwrap();
+            for y in min_y - 3..max_y + 3 {
+                for x in min_x - 3..max_x + 3 {
+                    if lights.iter().any(|l| (x, y) == l.position) {
+                        writeln!(out, "0 0 0").unwrap();
+                    } else {
+                        writeln!(out, "255 255 255").unwrap();
+                    }
+                }
+            }
+        }
+        for l in lights.iter_mut() {
+            l.position.0 += l.velocity.0;
+            l.position.1 += l.velocity.1;
+        }
+    }
+    0
+}
+
 aoc_lib! { year = 2018 }
