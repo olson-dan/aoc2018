@@ -665,4 +665,84 @@ pub fn solve_day10_part1(input: &[Day10Light]) -> usize {
     0
 }
 
+#[aoc_generator(day11)]
+pub fn input_generator_day11(input: &str) -> Vec<usize> {
+    vec![input.trim().parse().unwrap()]
+}
+
+fn get_power_level(input: usize, x: usize, y: usize) -> i64 {
+    let rack_id = x + 10;
+    let power_level = y * rack_id;
+    let power_level = power_level + input;
+    let power_level = power_level * rack_id;
+    let power_level = if power_level < 100 {
+        0
+    } else {
+        (power_level / 100) % 10
+    };
+    power_level as i64 - 5
+}
+
+#[test]
+fn power_level() {
+    assert_eq!(get_power_level(8, 3, 5), 4);
+    assert_eq!(get_power_level(57, 122, 79), -5);
+    assert_eq!(get_power_level(39, 217, 196), 0);
+    assert_eq!(get_power_level(71, 101, 153), 4);
+}
+
+#[aoc(day11, part1)]
+pub fn solve_day11_part1(input: &[usize]) -> usize {
+    let input = input[0];
+    let mut grid: Vec<Vec<i64>> = Vec::with_capacity(300);
+    for y in 1..=300 {
+        let mut row: Vec<i64> = Vec::with_capacity(300);
+        for x in 1..=300 {
+            row.push(get_power_level(input, x, y));
+        }
+        grid.push(row);
+    }
+    let mut totals: HashMap<(usize, usize), i64> = HashMap::new();
+    for y in 0..297 {
+        for x in 0..297 {
+            let y0 = grid[y + 0][x + 0] + grid[y + 0][x + 1] + grid[y + 0][x + 2];
+            let y1 = grid[y + 1][x + 0] + grid[y + 1][x + 1] + grid[y + 1][x + 2];
+            let y2 = grid[y + 2][x + 0] + grid[y + 2][x + 1] + grid[y + 2][x + 2];
+            totals.insert((x, y), y0 + y1 + y2);
+        }
+    }
+    let (x, y) = *totals.iter().max_by_key(|(_, ref y)| *y).unwrap().0;
+    println!("{}, {}", x + 1, y + 1);
+    0
+}
+
+#[aoc(day11, part2)]
+pub fn solve_day11_part2(input: &[usize]) -> usize {
+    let input = input[0];
+    let mut grid: Vec<Vec<i64>> = Vec::with_capacity(300);
+    for y in 1..=300 {
+        let mut row: Vec<i64> = Vec::with_capacity(300);
+        for x in 1..=300 {
+            row.push(get_power_level(input, x, y));
+        }
+        grid.push(row);
+    }
+    let mut totals: HashMap<(usize, usize, usize), i64> = HashMap::new();
+    for s in 1..=300 {
+        for y in 0..(300 - s) {
+            for x in 0..(300 - s) {
+                let entry = totals.entry((x, y, s)).or_insert(0);
+                for i in 0..s {
+                    for j in 0..s {
+                        *entry += grid[y + i][x + j]
+                    }
+                }
+            }
+        }
+    }
+    let (x, y, s) = *totals.iter().max_by_key(|(_, ref y)| *y).unwrap().0;
+    println!("{},{},{}", x + 1, y + 1, s);
+    0
+}
+
 aoc_lib! { year = 2018 }
