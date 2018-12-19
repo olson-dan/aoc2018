@@ -974,4 +974,80 @@ pub fn solve_day13_part2(input: &[Vec<char>]) -> String {
     }
 }
 
+#[aoc_generator(day14)]
+pub fn input_generator_day14(input: &str) -> String {
+    input.trim().to_string()
+}
+
+#[test]
+fn test_day_14() {
+    assert_eq!(solve_day14_part1(&input_generator_day14("9")), "5158916779");
+    assert_eq!(solve_day14_part1(&input_generator_day14("5")), "0124515891");
+    assert_eq!(
+        solve_day14_part1(&input_generator_day14("18")),
+        "9251071085"
+    );
+    assert_eq!(
+        solve_day14_part1(&input_generator_day14("2018")),
+        "5941429882"
+    );
+    assert_eq!(solve_day14_part2(&input_generator_day14("01245")), "5");
+    assert_eq!(solve_day14_part2(&input_generator_day14("51589")), "9");
+    assert_eq!(solve_day14_part2(&input_generator_day14("92510")), "18");
+    assert_eq!(solve_day14_part2(&input_generator_day14("59414")), "2018");
+}
+
+#[aoc(day14, part1)]
+pub fn solve_day14_part1(input: &str) -> String {
+    let input: usize = input.parse().unwrap();
+    let mut result = String::new();
+    let mut elves = [0usize, 1usize];
+    let mut v = vec![3u8, 7u8];
+    while v.len() < input + 20 {
+        let recipes = [v[elves[0]], v[elves[1]]];
+        let new_recipe = recipes.iter().sum();
+        let digits = if new_recipe < 10 {
+            vec![new_recipe]
+        } else {
+            vec![new_recipe / 10, new_recipe % 10]
+        };
+        for d in &digits {
+            v.push(*d);
+            if v.len() > input && v.len() <= input + 10 {
+                result += &d.to_string();
+            }
+        }
+        for (x, y) in elves.iter_mut().zip(&recipes) {
+            *x = (*x + *y as usize + 1) % v.len();
+        }
+    }
+    result
+}
+
+#[aoc(day14, part2)]
+pub fn solve_day14_part2(input: &str) -> String {
+    let mut result = "37".to_string();
+    let mut elves = [0usize, 1usize];
+    let mut v = vec![3u8, 7u8];
+    loop {
+        let recipes = [v[elves[0]], v[elves[1]]];
+        let new_recipe = recipes.iter().sum();
+        let digits = if new_recipe < 10 {
+            vec![new_recipe]
+        } else {
+            vec![new_recipe / 10, new_recipe % 10]
+        };
+        for d in &digits {
+            v.push(*d);
+            result += &d.to_string();
+            if result.ends_with(&input) {
+                return format!("{}", result.len() - input.len());
+            }
+        }
+        for (x, y) in elves.iter_mut().zip(&recipes) {
+            *x = (*x + *y as usize + 1) % v.len();
+        }
+    }
+}
+
 aoc_lib! { year = 2018 }
