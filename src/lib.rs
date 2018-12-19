@@ -156,7 +156,8 @@ pub struct Guard {
 pub fn input_generator_day4(input: &str) -> Vec<Guard> {
     let re = Regex::new(
         r"^\[(.*) (\d{2}):(\d{2})\] (Guard #(\d+) begins shift|(wakes up)|(falls asleep))$",
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut guards = Vec::new();
 
@@ -254,7 +255,8 @@ pub fn solve_day4_part2(input: &[Guard]) -> u32 {
         .map(|x| {
             let (guard_id, times) = x.iter().max_by_key(|(_, ref y)| *y).unwrap();
             (*guard_id, *times)
-        }).collect();
+        })
+        .collect();
     let (guard_id, times) = max_minutes.iter().max_by_key(|(_, y)| y).unwrap();
     let (minute, _) = max_minutes
         .iter()
@@ -293,7 +295,8 @@ pub fn solve_day5_part2(input: &str) -> usize {
             let mut s = input.to_string();
             s.retain(|x| !x.eq_ignore_ascii_case(&c));
             solve_day5_part1(&s)
-        }).min()
+        })
+        .min()
         .unwrap()
 }
 
@@ -304,7 +307,8 @@ pub fn input_generator_day6(input: &str) -> Vec<(i32, i32)> {
         .map(|x| {
             let (a, b) = x.trim().split_at(x.find(',').unwrap());
             (a.parse().unwrap(), b[2..].parse().unwrap())
-        }).collect()
+        })
+        .collect()
 }
 
 #[aoc(day6, part1)]
@@ -425,7 +429,8 @@ pub fn solve_day7_part2(input: &[(HashSet<char>, HashMap<char, String>)]) -> usi
                 } else {
                     None
                 }
-            }).collect();
+            })
+            .collect();
         for x in indices_to_remove.into_iter().rev() {
             elves.swap_remove(x);
         }
@@ -603,7 +608,8 @@ pub fn input_generator_day10(input: &str) -> Vec<Day10Light> {
             let position = (cap[1].parse().unwrap(), cap[2].parse().unwrap());
             let velocity = (cap[3].parse().unwrap(), cap[4].parse().unwrap());
             Day10Light { position, velocity }
-        }).collect()
+        })
+        .collect()
 }
 
 use std::fs::File;
@@ -692,7 +698,7 @@ fn power_level() {
 }
 
 #[aoc(day11, part1)]
-pub fn solve_day11_part1(input: &[usize]) -> usize {
+pub fn solve_day11_part1(input: &[usize]) -> String {
     let input = input[0];
     let mut grid: Vec<Vec<i64>> = Vec::with_capacity(300);
     for y in 1..=300 {
@@ -712,12 +718,11 @@ pub fn solve_day11_part1(input: &[usize]) -> usize {
         }
     }
     let (x, y) = *totals.iter().max_by_key(|(_, ref y)| *y).unwrap().0;
-    println!("{}, {}", x + 1, y + 1);
-    0
+    format!("{}, {}", x + 1, y + 1)
 }
 
 #[aoc(day11, part2)]
-pub fn solve_day11_part2(input: &[usize]) -> usize {
+pub fn solve_day11_part2(input: &[usize]) -> String {
     let input = input[0];
     let mut grid: Vec<Vec<i64>> = Vec::with_capacity(300);
     for y in 1..=300 {
@@ -741,8 +746,232 @@ pub fn solve_day11_part2(input: &[usize]) -> usize {
         }
     }
     let (x, y, s) = *totals.iter().max_by_key(|(_, ref y)| *y).unwrap().0;
-    println!("{},{},{}", x + 1, y + 1, s);
-    0
+    format!("{},{},{}", x + 1, y + 1, s)
+}
+
+#[derive(Debug)]
+pub struct PlantStuff {
+    initial: String,
+    rules: HashMap<String, char>,
+}
+
+impl AsRef<PlantStuff> for PlantStuff {
+    fn as_ref(&self) -> &PlantStuff {
+        self
+    }
+}
+
+#[aoc_generator(day12)]
+pub fn input_generator_day12(input: &str) -> PlantStuff {
+    let mut lines = input.lines();
+    let initial = lines.next().unwrap()[15..].trim().to_string();
+    // blank line
+    lines.next();
+    let mut rules = HashMap::new();
+    for l in lines {
+        let left = l[..6].trim().to_string();
+        let right = l.trim().chars().last().unwrap();
+        rules.insert(left, right);
+    }
+    PlantStuff { initial, rules }
+}
+
+#[aoc(day12, part1)]
+pub fn solve_day12_part1(input: &PlantStuff) -> i64 {
+    let rules = &input.rules;
+    let mut s = format!("....{}....", input.initial);
+
+    let mut pivot = 4i64;
+    for _ in 0..5000 {
+        let mut new_s = String::new();
+        for x in 0..s.len() - 4 {
+            let l = unsafe { s.get_unchecked(x..x + 5) };
+            new_s.push(*rules.get(l).unwrap_or(&'.'));
+        }
+        s = format!("....{}....", new_s.trim_right_matches('.'));
+        pivot += 2;
+    }
+    s.char_indices()
+        .filter_map(|(i, c)| {
+            if c == '#' {
+                Some(i as i64 - pivot)
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+#[aoc(day12, part2)]
+pub fn solve_day12_part2(input: &PlantStuff) -> i64 {
+    let rules = &input.rules;
+    let mut s = format!("....{}....", input.initial);
+
+    let mut pivot = 4i64;
+    for i in 0..50_000_000_000usize {
+        let mut new_s = String::new();
+        for x in 0..s.len() - 4 {
+            let l = unsafe { s.get_unchecked(x..x + 5) };
+            new_s.push(*rules.get(l).unwrap_or(&'.'));
+        }
+        if !new_s.starts_with("....") {
+            let dots_to_add = 4 - (new_s.len() - new_s.trim_left_matches('.').len());
+            new_s = match dots_to_add {
+                4 => format!("....{}", new_s),
+                3 => format!("...{}", new_s),
+                2 => format!("..{}", new_s),
+                1 => format!(".{}", new_s),
+                _ => unreachable!(),
+            };
+            pivot += dots_to_add as i64 - 2;
+        } else {
+            pivot -= 2;
+        }
+        s = format!("{}....", new_s.trim_right_matches('.'));
+    }
+    s.char_indices()
+        .filter_map(|(i, c)| {
+            if c == '#' {
+                Some(i as i64 - pivot)
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+#[aoc_generator(day13)]
+pub fn input_generator_day13(input: &str) -> Vec<Vec<char>> {
+    input.lines().map(|l| l.chars().collect()).collect()
+}
+
+#[test]
+fn test_day_13() {
+    let input = r"/->-\
+|   |  /----\
+| /-+--+-\  |
+| | |  | v  |
+\-+-/  \-+--/
+  \------/   ";
+    assert_eq!(solve_day13_part1(&input_generator_day13(input)), "7,3");
+    let input = r"/>-<\
+|   |
+| /<+-\
+| | | v
+\>+</ |
+  |   ^
+  \<->/";
+    assert_eq!(solve_day13_part2(&input_generator_day13(input)), "6,4");
+}
+
+fn move_cars(car: &(usize, usize, char, usize), input: char) -> (usize, usize, char, usize) {
+    let (mut x, mut y, mut c, mut counter) = *car;
+    match (c, input, counter) {
+        (_, ' ', _) => unimplemented!(),
+        ('<', '/', _) | ('>', '\\', _) | ('<', '+', 0) | ('>', '+', 2) => {
+            y += 1;
+            c = 'v';
+        }
+        ('<', '\\', _) | ('>', '/', _) | ('<', '+', 2) | ('>', '+', 0) => {
+            y -= 1;
+            c = '^';
+        }
+        ('v', '/', _) | ('^', '\\', _) | ('v', '+', 2) | ('^', '+', 0) => {
+            x -= 1;
+            c = '<';
+        }
+        ('v', '\\', _) | ('^', '/', _) | ('v', '+', 0) | ('^', '+', 2) => {
+            x += 1;
+            c = '>';
+        }
+        ('<', _, _) => x -= 1,
+        ('>', _, _) => x += 1,
+        ('v', _, _) => y += 1,
+        ('^', _, _) => y -= 1,
+        _ => unimplemented!(),
+    }
+    if input == '+' {
+        counter = (counter + 1) % 3
+    }
+    (x, y, c, counter)
+}
+
+#[aoc(day13, part1)]
+pub fn solve_day13_part1(input: &[Vec<char>]) -> String {
+    let mut cars: Vec<(usize, usize, char, usize)> = Vec::new();
+    for (y, r) in input.iter().enumerate() {
+        for (x, c) in r.iter().enumerate() {
+            match c {
+                '>' | '<' | '^' | 'v' => cars.push((x, y, *c, 0)),
+                _ => {}
+            }
+        }
+    }
+    loop {
+        let mut new_cars = Vec::new();
+        {
+            cars.sort_by_key(|(x, y, _, _)| (*x, *y));
+            let mut list = cars.as_slice();
+            while let Some((h, t)) = list.split_first() {
+                let car = move_cars(h, input[h.1][h.0]);
+                if t.iter()
+                    .chain(&new_cars)
+                    .any(|(x, y, _, _)| *x == car.0 && *y == car.1)
+                {
+                    return format!("{},{}", car.0, car.1);
+                }
+                new_cars.push(car);
+                list = t;
+            }
+        }
+        cars = new_cars;
+    }
+}
+
+#[aoc(day13, part2)]
+pub fn solve_day13_part2(input: &[Vec<char>]) -> String {
+    let mut cars: Vec<(usize, usize, char, usize)> = Vec::new();
+    for (y, r) in input.iter().enumerate() {
+        for (x, c) in r.iter().enumerate() {
+            match c {
+                '>' | '<' | '^' | 'v' => cars.push((x, y, *c, 0)),
+                _ => {}
+            }
+        }
+    }
+    loop {
+        let mut new_cars = Vec::new();
+        let mut to_remove = Vec::new();
+        {
+            cars.sort_by_key(|(x, y, _, _)| (*x, *y));
+            let mut list = cars.as_slice();
+            while let Some((h, t)) = list.split_first() {
+                if to_remove.iter().any(|(x, y)| *x == h.0 && *y == h.1) {
+                    to_remove.retain(|(x, y)| *x != h.0 || *y != h.1);
+                    list = t;
+                    continue;
+                }
+                let car = move_cars(h, input[h.1][h.0]);
+                if t.iter()
+                    .chain(&new_cars)
+                    .any(|(x, y, _, _)| *x == car.0 && *y == car.1)
+                {
+                    let old_len = new_cars.len();
+                    new_cars.retain(|(x, y, _, _)| *x != car.0 || *y != car.1);
+                    if old_len == new_cars.len() {
+                        to_remove.push((car.0, car.1));
+                    }
+                } else {
+                    new_cars.push(car);
+                }
+                list = t;
+            }
+        }
+        cars = new_cars;
+        if cars.len() == 1 {
+            return format!("{},{}", cars[0].0, cars[0].1);
+        }
+    }
 }
 
 aoc_lib! { year = 2018 }

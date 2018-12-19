@@ -4,6 +4,6 @@ version = "0.1.0"
 authors = ["olson-dan <olson-dan@users.noreply.github.com>"]
 
 [dependencies]
-aoc-runner = "0.2.0"
-aoc-runner-derive = "0.2.0"
+aoc-runner = "0.2.2"
+aoc-runner-derive = "0.2.2"
 regex = "1.1.0"
